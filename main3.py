@@ -1,36 +1,33 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go  # Plotly 그래프 객체 사용
 
-# Streamlit 앱 제목
-st.title("기온 상승과 이상기후 및 자연재해 시각화")
+# 앱 제목
+st.title("국가별 사망률, 출산율, 노인 비율 시각화 앱")
 
-# 사이드바를 통해 데이터 선택
-st.sidebar.header("데이터 옵션")
-data_source = st.sidebar.selectbox(
-    "데이터를 선택하세요",
+# 사이드바: 데이터 입력 옵션
+st.sidebar.header("데이터 입력 옵션")
+data_input_method = st.sidebar.selectbox(
+    "데이터 입력 방법을 선택하세요",
     ("샘플 데이터 사용", "CSV 파일 업로드")
 )
 
 # 데이터 준비
-if data_source == "샘플 데이터 사용":
+if data_input_method == "샘플 데이터 사용":
     # 샘플 데이터 생성
-    years = np.arange(2000, 2025)
-    temp_rise = np.random.uniform(0.1, 1.0, len(years)).cumsum()  # 누적 기온 상승
-    extreme_weather = np.random.randint(10, 50, len(years))  # 이상기후 발생 빈도
-    disaster_freq = np.random.randint(5, 30, len(years))  # 자연재해 발생 빈도
-    disaster_scale = np.random.uniform(1.0, 10.0, len(years))  # 자연재해 발생 규모
+    countries = ["한국", "미국", "일본", "독일", "프랑스", "중국", "인도", "브라질", "호주", "캐나다"]
+    mortality_rates = [5.2, 8.7, 10.5, 11.1, 9.8, 7.6, 6.2, 6.9, 6.3, 7.8]  # 사망률 (%)
+    birth_rates = [0.9, 1.6, 1.2, 1.4, 1.9, 1.7, 2.3, 2.1, 1.8, 1.5]  # 출산율 (출생아 수)
+    elderly_ratios = [16.5, 12.9, 29.1, 22.3, 20.1, 10.6, 8.2, 9.3, 13.4, 14.8]  # 노인 비율 (%)
 
     data = pd.DataFrame({
-        "Year": years,
-        "Temperature Rise (°C)": temp_rise,
-        "Extreme Weather Frequency": extreme_weather,
-        "Disaster Frequency": disaster_freq,
-        "Disaster Scale": disaster_scale
+        "Country": countries,
+        "Mortality Rate (%)": mortality_rates,
+        "Birth Rate (per 1000)": birth_rates,
+        "Elderly Ratio (%)": elderly_ratios
     })
-else:
-    # CSV 파일 업로드
+
+elif data_input_method == "CSV 파일 업로드":
     uploaded_file = st.sidebar.file_uploader("CSV 파일을 업로드하세요", type=["csv"])
     if uploaded_file:
         data = pd.read_csv(uploaded_file)
@@ -38,50 +35,64 @@ else:
         st.warning("CSV 파일을 업로드하세요.")
         st.stop()
 
-# 데이터 확인
+# 데이터 미리보기
 st.subheader("데이터 미리보기")
 st.dataframe(data)
 
-# 그래프 생성
-st.subheader("데이터 시각화")
+# 그래프 시각화
+st.subheader("국가별 사망률, 출산율, 노인 비율")
 
-# 기온 상승 그래프
-st.write("### 기온 상승 (°C)")
-fig, ax = plt.subplots()
-ax.plot(data["Year"], data["Temperature Rise (°C)"], color='orange', marker='o', label="기온 상승")
-ax.set_xlabel("Year")
-ax.set_ylabel("Temperature Rise (°C)")
-ax.set_title("기온 상승")
-ax.legend()
-st.pyplot(fig)
+# Plotly 그래프 생성
+fig = go.Figure()
 
-# 이상기후 발생 빈도 그래프
-st.write("### 이상기후 발생 빈도")
-fig, ax = plt.subplots()
-ax.bar(data["Year"], data["Extreme Weather Frequency"], color='blue', label="이상기후 발생 빈도")
-ax.set_xlabel("Year")
-ax.set_ylabel("Frequency")
-ax.set_title("이상기후 발생 빈도")
-ax.legend()
-st.pyplot(fig)
+# 사망률
+fig.add_trace(go.Bar(
+    x=data["Country"],
+    y=data["Mortality Rate (%)"],
+    name="사망률 (%)",
+    marker=dict(color="red")
+))
 
-# 자연재해 발생 빈도 및 규모 그래프
-st.write("### 자연재해 발생 빈도와 규모")
-fig, ax1 = plt.subplots()
+# 출산율
+fig.add_trace(go.Bar(
+    x=data["Country"],
+    y=data["Birth Rate (per 1000)"],
+    name="출산율 (출생아 수)",
+    marker=dict(color="blue")
+))
 
-color = 'tab:red'
-ax1.set_xlabel("Year")
-ax1.set_ylabel("Disaster Frequency", color=color)
-ax1.bar(data["Year"], data["Disaster Frequency"], color=color, alpha=0.6, label="발생 빈도")
-ax1.tick_params(axis='y', labelcolor=color)
+# 노인 비율
+fig.add_trace(go.Bar(
+    x=data["Country"],
+    y=data["Elderly Ratio (%)"],
+    name="노인 비율 (%)",
+    marker=dict(color="green")
+))
 
-ax2 = ax1.twinx()
-color = 'tab:green'
-ax2.set_ylabel("Disaster Scale", color=color)
-ax2.plot(data["Year"], data["Disaster Scale"], color=color, marker='o', label="발생 규모")
-ax2.tick_params(axis='y', labelcolor=color)
+# 레이아웃 설정
+fig.update_layout(
+    title="국가별 사망률, 출산율, 노인 비율 비교",
+    xaxis_title="국가",
+    yaxis_title="비율 / 값",
+    barmode="group",  # 그룹형 막대 그래프
+    xaxis_tickangle=-45  # x축 레이블 회전
+)
 
-fig.tight_layout()
-st.pyplot(fig)
+# Streamlit에 그래프 표시
+st.plotly_chart(fig)
 
-st.write("데이터를 분석하고, 변화 추이를 확인해보세요!")
+# 추가 분석
+st.subheader("추가 분석")
+highest_mortality = data.loc[data["Mortality Rate (%)"].idxmax()]
+highest_birth_rate = data.loc[data["Birth Rate (per 1000)"].idxmax()]
+highest_elderly_ratio = data.loc[data["Elderly Ratio (%)"].idxmax()]
+
+st.write(f"**사망률이 가장 높은 국가**: {highest_mortality['Country']} ({highest_mortality['Mortality Rate (%)']}%)")
+st.write(f"**출산율이 가장 높은 국가**: {highest_birth_rate['Country']} ({highest_birth_rate['Birth Rate (per 1000)']})")
+st.write(f"**노인 비율이 가장 높은 국가**: {highest_elderly_ratio['Country']} ({highest_elderly_ratio['Elderly Ratio (%)']}%)")
+
+# 사용자 의견 요청
+st.write("### 인사이트")
+st.text_area("데이터를 보고 얻은 인사이트를 기록하세요.", placeholder="예: 특정 국가의 출산율이 낮은 이유는...")
+
+st.write("앱을 사용해주셔서 감사합니다!")
