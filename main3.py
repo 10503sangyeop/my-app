@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px  # Plotly 사용
 
 # 앱 제목
 st.title("국가별 사망률 시각화 앱")
@@ -33,13 +33,17 @@ st.dataframe(data)
 
 # 그래프 시각화
 st.subheader("국가별 사망률 그래프")
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.bar(data["Country"], data["Mortality Rate (%)"], color="skyblue")
-ax.set_xlabel("Country")
-ax.set_ylabel("Mortality Rate (%)")
-ax.set_title("국가별 사망률")
-plt.xticks(rotation=45)
-st.pyplot(fig)
+fig = px.bar(
+    data,
+    x="Country",
+    y="Mortality Rate (%)",
+    title="국가별 사망률",
+    labels={"Mortality Rate (%)": "사망률 (%)", "Country": "국가"},
+    color="Mortality Rate (%)",  # 색상으로 사망률 표시
+    color_continuous_scale="Blues"
+)
+fig.update_layout(xaxis_tickangle=-45)  # x축 레이블 회전
+st.plotly_chart(fig)
 
 # 추가 분석
 st.subheader("추가 분석")
